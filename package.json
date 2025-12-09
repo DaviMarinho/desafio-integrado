@@ -1,0 +1,37 @@
+{
+  "name": "desafio",
+  "version": "1.0.0",
+  "description": "Sistema fullstack de gerenciamento de notícias - React + NestJS",
+  "private": true,
+  "scripts": {
+    "docker:up": "docker-compose up",
+    "docker:up:detached": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:down:volumes": "docker-compose down -v",
+    "docker:logs": "docker-compose logs -f",
+    "docker:logs:backend": "docker-compose logs -f backend",
+    "docker:logs:frontend": "docker-compose logs -f frontend",
+    "docker:restart": "docker-compose restart",
+    "dev:backend": "cd prova-backend && npm run start:dev",
+    "dev:frontend": "cd prova-frontend && npm start",
+    "test:backend": "cd prova-backend && npm test",
+    "test:frontend": "cd prova-frontend && npm test",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "install:backend": "cd prova-backend && npm install",
+    "install:frontend": "cd prova-frontend && npm install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/desafio"
+  },
+  "keywords": [
+    "react",
+    "nestjs",
+    "typescript",
+    "postgresql",
+    "docker",
+    "fullstack"
+  ],
+  "author": "",
+  "license": "ISC"
+}

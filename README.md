@@ -28,6 +28,94 @@ desafio/
 - PostgreSQL 15
 - Cache em memória
 
+## Como Começar
+
+### Pré-requisitos
+
+- **Git** - Para clonar o repositório
+- **Docker** e **Docker Compose** - Para executar a aplicação em containers
+- **Node.js 18+** e **npm** (opcional) - Apenas se for executar localmente sem Docker
+
+### Início Rápido com Docker
+
+1. **Clone o repositório**
+
+```bash
+git clone https://github.com/DaviMarinho/desafio-integrado.git
+cd desafio-integrado
+```
+
+2. **Configure as variáveis de ambiente** (opcional - já vem com valores padrão)
+
+```bash
+# Backend
+cp prova-backend/.env.example prova-backend/.env
+
+# Frontend
+cp prova-frontend/.env.example prova-frontend/.env
+```
+
+3. **Inicie todos os serviços com Docker**
+
+```bash
+docker compose up -d
+```
+
+Este comando irá:
+- Baixar as imagens necessárias
+- Criar e iniciar o container PostgreSQL
+- Criar e iniciar o container do Backend (NestJS)
+- Criar e iniciar o container do Frontend (React)
+
+4. **Aguarde os serviços iniciarem** (cerca de 30-60 segundos)
+
+Verifique o status dos containers:
+
+```bash
+docker compose ps
+```
+
+Acompanhe os logs:
+
+```bash
+# Ver todos os logs
+docker compose logs -f
+
+# Ver apenas logs do backend
+docker compose logs -f backend
+
+# Ver apenas logs do frontend
+docker compose logs -f frontend
+```
+
+5. **Acesse a aplicação**
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
+- **PostgreSQL**: localhost:5432
+
+6. **Testar a API**
+
+```bash
+# Criar uma notícia
+curl -X POST http://localhost:3001/noticias \
+  -H "Content-Type: application/json" \
+  -d '{"titulo":"Primeira Notícia","descricao":"Teste de integração"}'
+
+# Listar notícias
+curl http://localhost:3001/noticias
+```
+
+### Parar a Aplicação
+
+```bash
+# Parar todos os containers
+docker compose down
+
+# Parar e remover volumes (limpa o banco de dados)
+docker compose down -v
+```
+
 ## Configuração Inicial
 
 ### 1. Variáveis de Ambiente
@@ -47,8 +135,8 @@ FRONTEND_URL=http://localhost:3000
 #### Frontend (`prova-frontend/.env`)
 ```bash
 REACT_APP_API_URL=http://localhost:3001
+REACT_APP_BACKEND_URL=http://localhost:3001
 REACT_APP_VIACEP_URL=https://viacep.com.br/ws
-PORT=3000
 ```
 
 ### 2. Instalação de Dependências
@@ -218,7 +306,7 @@ src/
 
 **Características:**
 - Validação global com `class-validator`
-- CORS configurado para `localhost:3001`
+- CORS configurado para `localhost:3000`
 - Cache em memória para listagens
 - TypeORM com `synchronize: true` em desenvolvimento
 

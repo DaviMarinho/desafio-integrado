@@ -11,9 +11,10 @@ API RESTful desenvolvida com NestJS para gerenciamento de notícias (CRUD comple
 - **TypeORM 0.3** - ORM (Object-Relational Mapping) para TypeScript e JavaScript
 - **PostgreSQL 15** - Banco de dados relacional robusto e confiável
 - **Docker & Docker Compose** - Containerização e orquestração de serviços
-- **TypeScript** - Linguagem tipada que adiciona tipos estáticos ao JavaScript
+- **TypeScript 5.7** - Linguagem tipada que adiciona tipos estáticos ao JavaScript
 - **Class Validator** - Validação declarativa de dados usando decorators
 - **Class Transformer** - Transformação de objetos plain para instâncias de classe
+- **Jest 30** - Framework de testes para JavaScript/TypeScript
 
 ## Pré-requisitos
 
@@ -26,8 +27,8 @@ API RESTful desenvolvida com NestJS para gerenciamento de notícias (CRUD comple
 ### 1. Clone o repositório
 
 ```bash
-git clone <repository-url>
-cd prova-backend
+git clone https://github.com/DaviMarinho/desafio-integrado.git
+cd desafio-integrado/prova-backend
 ```
 
 ### 2. Instale as dependências
@@ -80,12 +81,14 @@ A API estará disponível em `http://localhost:3001`
 
 ### Opção 2: Execução com Docker (Recomendado)
 
+Execute a partir da raiz do projeto (desafio-integrado):
+
 ```bash
 # Construir e iniciar os containers
 docker compose up -d
 
 # Ver logs da API
-docker compose logs -f api
+docker compose logs -f backend
 
 # Parar os containers
 docker compose down
@@ -109,21 +112,30 @@ src/
 │   ├── entities/
 │   │   └── noticia.entity.ts          # Entidade TypeORM (schema do banco)
 │   ├── noticias.controller.ts         # Controller REST (endpoints HTTP)
+│   ├── noticias.controller.spec.ts    # Testes do controller
 │   ├── noticias.service.ts            # Service (lógica de negócio)
+│   ├── noticias.service.spec.ts       # Testes do service
 │   └── noticias.module.ts             # Module (configuração do módulo)
+├── common/
+│   └── cache/
+│       ├── cache.service.ts           # Serviço de cache em memória
+│       ├── cache.service.spec.ts      # Testes do cache
+│       └── cache.module.ts            # Module do cache
 ├── app.controller.ts                   # Controller principal da aplicação
+├── app.controller.spec.ts              # Testes do controller principal
 ├── app.module.ts                       # Module raiz da aplicação
 ├── app.service.ts                      # Service principal da aplicação
-└── main.ts                             # Entry point da aplicação
+├── main.ts                             # Entry point da aplicação
+└── main.spec.ts                        # Testes do bootstrap
 ```
 
 ### Justificativa da Estrutura
 
 A estrutura segue o padrão de **arquitetura modular** do NestJS:
 
-- **Separação de responsabilidades**: Cada módulo gerencia seu próprio domínio (noticias)
+- **Separação de responsabilidades**: Cada módulo gerencia seu próprio domínio (noticias, cache)
 - **Reutilização**: Módulos podem ser facilmente importados e reutilizados
-- **Testabilidade**: Facilita testes unitários e de integração
+- **Testabilidade**: Facilita testes unitários e de integração com arquivos `.spec.ts`
 - **Manutenibilidade**: Código organizado e fácil de navegar
 - **Escalabilidade**: Adicionar novos módulos é simples e não afeta os existentes
 
@@ -341,6 +353,21 @@ Remove uma notícia do sistema.
 - **Manutenibilidade**: Código organizado e fácil de entender
 - **Escalabilidade**: Adicionar novos recursos é simples e não afeta código existente
 
+### Sistema de Cache
+
+**Cache em Memória:**
+
+- Implementado através do `CacheService` no módulo `common/cache`
+- Reduz latência de consultas repetidas ao banco de dados
+- Invalidação automática em operações de escrita (create, update, delete)
+- Cache baseado em chave com prefixos para evitar colisões
+
+**Benefícios:**
+
+- **Performance**: Respostas mais rápidas para consultas frequentes
+- **Redução de carga**: Diminui número de queries ao PostgreSQL
+- **Simplicidade**: Implementação em memória sem dependências externas
+
 ### Validação Global
 
 **ValidationPipe configurado globalmente:**
@@ -354,6 +381,16 @@ Remove uma notícia do sistema.
 - Previne ataques de mass assignment
 - Valida todos os inputs automaticamente
 - Mensagens de erro claras em português
+
+### CORS
+
+**Configuração de CORS:**
+
+- Origin: Configurável via variável `FRONTEND_URL` (padrão: `http://localhost:3000`)
+- Credentials: Habilitado para suportar autenticação futura
+- Métodos: GET, POST, PATCH, DELETE, OPTIONS
+- Headers permitidos: Content-Type, Authorization
+- Headers expostos: X-Total-Count (para paginação)
 
 ## Comandos Úteis
 
@@ -374,18 +411,18 @@ npm run test:cov           # Testes com cobertura
 npm run test:e2e           # Testes end-to-end
 
 # Linting
-npm run lint               # Verifica problemas de código
+npm run lint               # Verifica e corrige problemas de código
 
 # Formatação
 npm run format             # Formata código com Prettier
 
-# Docker
+# Docker (executar da raiz do projeto)
 docker compose up -d                    # Iniciar containers em background
 docker compose down                     # Parar containers
-docker compose logs -f api              # Ver logs da API em tempo real
-docker compose exec api sh              # Acessar shell do container da API
+docker compose logs -f backend          # Ver logs da API em tempo real
+docker compose exec backend sh          # Acessar shell do container da API
 docker compose exec postgres psql -U postgres -d prova_db  # Acessar PostgreSQL
-docker compose restart api              # Reiniciar apenas a API
+docker compose restart backend          # Reiniciar apenas a API
 docker compose build --no-cache         # Rebuild forçado sem cache
 ```
 
@@ -397,9 +434,11 @@ docker compose build --no-cache         # Rebuild forçado sem cache
   - Obrigatório (`@IsNotEmpty`)
   - Deve ser string (`@IsString`)
   - Máximo 200 caracteres (`@MaxLength(200)`)
+  - Mensagem personalizada: "O título não pode estar vazio"
 - **descricao**:
   - Obrigatório (`@IsNotEmpty`)
   - Deve ser string (`@IsString`)
+  - Mensagem personalizada: "A descrição não pode estar vazia"
 
 ### UpdateNoticiaDto
 
@@ -413,14 +452,17 @@ docker compose build --no-cache         # Rebuild forçado sem cache
   - Inteiro (`@IsInt`)
   - Mínimo 1 (`@Min(1)`)
   - Padrão: 1
+  - Transformação automática de string para número
 - **limit**:
   - Opcional
   - Inteiro (`@IsInt`)
   - Mínimo 1, máximo 100 (`@Min(1)`, `@Max(100)`)
   - Padrão: 10
+  - Transformação automática de string para número
 - **search**:
   - Opcional
   - String (`@IsString`)
+  - Busca case-insensitive em título e descrição usando `ILike`
 
 ## Tratamento de Erros
 
@@ -475,7 +517,7 @@ Todas as mensagens de erro estão em **português** para melhor experiência do 
 ### Acessando o banco diretamente
 
 ```bash
-# Via Docker
+# Via Docker (da raiz do projeto)
 docker compose exec postgres psql -U postgres -d prova_db
 
 # Comandos úteis PostgreSQL
@@ -519,9 +561,72 @@ curl "http://localhost:3001/noticias?search=primeira"
 
 Importe a collection ou crie requests com os endpoints acima.
 
+## Testes
+
+### Executar Testes
+
+```bash
+# Testes unitários
+npm run test
+
+# Testes em modo watch (útil durante desenvolvimento)
+npm run test:watch
+
+# Testes com cobertura de código
+npm run test:cov
+
+# Testes end-to-end (requer PostgreSQL rodando)
+npm run test:e2e
 ```
-postman-colletion.json
+
+### Cobertura de Testes
+
+O projeto inclui testes para:
+
+- **Controllers** (`*.controller.spec.ts`): Testa endpoints HTTP e respostas
+- **Services** (`*.service.spec.ts`): Testa lógica de negócio e interação com banco
+- **Cache** (`cache.service.spec.ts`): Testa funcionamento do sistema de cache
+- **Bootstrap** (`main.spec.ts`): Testa inicialização da aplicação
+
+## Troubleshooting
+
+### Erro de conexão com banco
+
+```bash
+# Verificar se PostgreSQL está rodando (da raiz do projeto)
+docker compose ps
+
+# Reiniciar PostgreSQL
+docker compose restart postgres
+
+# Ver logs do banco
+docker compose logs postgres
 ```
+
+### Erro "Cannot find module" após npm install
+
+```bash
+# Remover node_modules e reinstalar
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Backend retorna erro 500 ao criar notícia
+
+- Verifique se o PostgreSQL está acessível
+- Confirme que as credenciais do `.env` estão corretas
+- Veja os logs: `docker compose logs backend` (da raiz do projeto)
+
+### Hot reload não funciona no Docker
+
+- Certifique-se de que os volumes estão montados corretamente no `docker-compose.yml`
+- Verifique se a pasta `src` está sendo monitorada
+
+### Testes E2E falham
+
+- Certifique-se de que o PostgreSQL está rodando: `docker compose up -d postgres`
+- Verifique se as variáveis de ambiente do `.env` estão corretas
+- Limpe o banco de dados de teste se necessário
 
 ---
 
